@@ -49,29 +49,38 @@ typedef struct Molecule_* Molecule;
 
 typedef struct TestCase_
 {
-        Molecule molecule;
-        Molecule roleculeLR;
-	Molecule roleculeRL;
+        Molecule moleculeL; // compare molecule and rolecule and move 
+        Molecule roleculeL; // 	     rolecule to left (remove_first roleculeL)
+	Molecule moleculeR; // compare molecule and rolecule and move
+	Molecule roleculeR; //       rolecule to right (remove_first moleculeR)
         char *data;
+	long length;
         Pair answer; // Answer.fst is a length and Answer.snd is a first letter index
-	int number;
+	int number; // TestCase #number
 } TestCase;
 
 // 0 <= i <= length-1
 inline char get_dnk(Molecule molecule, long i)
 {
-	return ((molecule->first+molecule->RL*i >= 0)&&(molecule->first+molecule->RL*i<molecule->length)) ? 
-			molecule->data[molecule->first+molecule->RL*i] : 'X';
+	return ((i >= 0)&&(i < molecule->length)) ?
+			molecule->data[molecule->first + molecule->RL*i] : 'X';
 }
 
-void shift_right(Molecule molecule)
+void remove_first(Molecule molecule)
 {
-	molecule->first++;
+	if (molecule->length > 0)
+	{
+		if (molecule->RL == 1) molecule->first++; else molecule->first--;
+		molecule->length--;
+	}	
 }
 
-void shift_left(Molecule molecule)
+void remove_last(Molecule molecule)
 {
-	molecule->first--;
+	if (molecule->length > 0)
+	{
+		molecule->length--;
+	}
 }
 
 void reverse(Molecule molecule)
@@ -81,49 +90,22 @@ void reverse(Molecule molecule)
 }
 
 // must be molecule1->length == molecule2->length
-// if RL == 1 then from Right to left compare
-// if RL == 0 then from Left to Right compare
-Pair compare(Molecule molecule1, Molecule molecule2, int RL)
+Pair compare(Molecule molecule1, Molecule molecule2)
 {
-	long i;
+	long i, length = molecule1->length < molecule2->length ? molecule1->length : molecule2->length; // minimal length between molecule1 and molecule2
 	Pair current = {0, 0}, total = {0, 0};
-	char ch;
-	if (RL)
+	for (i=0; i<length; i++)
 	{
-                for (i=molecule1->length-1; i>=0; i--)
-                {
-                        char ch = get_dnk(molecule2, i);
-                        if ((ch != 'X') && (get_dnk(molecule1, i) == ch))
-                        {
-                                current.fst++;
-                                if (current.snd==0) current.snd=molecule1->length-i; //indexes begin from 1
-                        }
-                        else
-                        {
-                                if (current.fst > total.fst) total = current;
-                                current.fst = 0;
-                                current.snd = 0;
-        //                      if (ch == 'X') break;
-                        }
-                }
-	}
-	else
-	{
-		for (i=0; i<molecule1->length; i++)
+		if (get_dnk(molecule1, i) == get_dnk(molecule2, i))
 		{
-			char ch = get_dnk(molecule2, i);
-			if ((ch != 'X') && (get_dnk(molecule1, i) == ch))
-			{
-				current.fst++;
-				if (current.snd==0) current.snd=i+1; //indexes begin from 1
-			}
-			else
-			{
-				if (current.fst > total.fst) total = current;
-				current.fst = 0;
-				current.snd = 0;
-	//			if (ch == 'X') break;
-			}
+			current.fst++;
+			if (current.snd==0) current.snd=i+1; //indexes begin from 1
+		}
+		else
+		{
+			if (current.fst > total.fst) total = current;
+			current.fst = 0;
+			current.snd = 0;
 		}
 	}
 	if (current.fst > total.fst) total = current;
@@ -142,18 +124,22 @@ void printm(Molecule molecule)
 
 void swap_tests(TestCase *test1, TestCase *test2)
 {
-		TestCase temp = {test1->molecule, test1->roleculeLR, test1->roleculeRL, test1->data, test1->answer, test1->number};
-		test1->molecule = test2->molecule;
-		test1->roleculeLR = test2->roleculeLR;
-		test1->roleculeRL = test2->roleculeRL;
+		TestCase temp = {test1->moleculeL, test1->roleculeL, test1->moleculeR, test1->roleculeR, test1->data, test1->length, test1->answer, test1->number};
+		test1->moleculeL = test2->moleculeL;
+		test1->roleculeL = test2->roleculeL;
+		test1->moleculeR = test2->moleculeR;
+		test1->roleculeR = test2->roleculeR;
 		test1->data = test2->data;
+		test1->length = test2->length;
 		test1->answer = test2->answer;
 		test1->number = test2->number;
 		
-		test2->molecule = temp.molecule;
-		test2->roleculeLR = temp.roleculeLR;
-		test2->roleculeRL = temp.roleculeRL;
+		test2->moleculeL = temp.moleculeL;
+		test2->roleculeL = temp.roleculeL;
+		test2->moleculeR = temp.moleculeR;
+		test2->roleculeR = temp.roleculeR;
 		test2->data = temp.data;
+		test2->length = temp.length;
 		test2->answer = temp.answer;
 		test2->number = temp.number;
 }
@@ -163,7 +149,7 @@ int longest_test(TestCase *tests, int T)
 {
 	if (T==1) return 0;
 	int index = 1+longest_test(&tests[1], T-1);
-	return tests[0].molecule->length > tests[index].molecule->length ? 0 : index;
+	return tests[0].length > tests[index].length ? 0 : index;
 }
 
 void prints(TestCase *tests, int T)
@@ -171,7 +157,7 @@ void prints(TestCase *tests, int T)
         int test_case;
         for (test_case = 0; test_case < T; test_case++)
         {
-                printf("testcase[%d]: length %ld\n", test_case, tests[test_case].molecule->length);
+                printf("testcase[%d]: length %ld\n", test_case, tests[test_case].length);
         }
 }
 
@@ -214,44 +200,45 @@ int main(void)
         for(test_case = 0; test_case < T; test_case++)
         {
                 test = &tests[test_case];
-                test->molecule = (Molecule) malloc(sizeof(struct Molecule_));
-                test->roleculeLR = (Molecule) malloc(sizeof(struct Molecule_));
-                test->roleculeRL = (Molecule) malloc(sizeof(struct Molecule_));
-			if (temp.fst > test->answer.fst) test->answer = temp;
+                test->moleculeL = (Molecule) malloc(sizeof(struct Molecule_));
+                test->roleculeL = (Molecule) malloc(sizeof(struct Molecule_));
+                test->moleculeR = (Molecule) malloc(sizeof(struct Molecule_));
+                test->roleculeR = (Molecule) malloc(sizeof(struct Molecule_));
                 test->answer.fst = 1;
                 test->answer.snd = 1;
 		test->number = test_case + 1;
-		scanf("%ld", &test->molecule->length);
-                test->roleculeRL->length = test->roleculeLR->length = test->molecule->length;
-		all_data[test_case] = (char *) malloc(test->molecule->length * sizeof(char));
-		data = test->molecule->data = test->roleculeLR->data = test->roleculeRL->data = all_data[test_case];
+		scanf("%ld", &test->length);
+                test->roleculeR->length = test->roleculeL->length = test->moleculeR->length = test->moleculeL->length = test->length;
+		all_data[test_case] = (char *) malloc(test->length * sizeof(char));
+		data = test->moleculeL->data = test->roleculeL->data = test->roleculeR->data = test->moleculeR->data = all_data[test_case];
 		scanf("%s", data);
-                test->roleculeLR->first = test->roleculeRL->first = test->molecule->first = 0;
-                test->roleculeLR->RL = test->roleculeRL->RL = test->molecule->RL = 1;
-                reverse(test->roleculeLR);
-		reverse(test->roleculeRL);
+                test->roleculeL->first = test->roleculeR->first = test->moleculeL->first = test->moleculeR->first = 0;
+                test->roleculeL->RL = test->roleculeR->RL = test->moleculeL->RL = test->moleculeR->RL = 1;
+                reverse(test->roleculeL);
+		reverse(test->roleculeR);
 	}
 	for(test_case = 0; test_case < T; test_case++)
 	{
 		test = &tests[test_case];
-		if (!timeoff) for (number_of_dnk = 0; number_of_dnk < test->molecule->length - 1; number_of_dnk++)
+		if (!timeoff) for (number_of_dnk = 0; number_of_dnk < test->length; number_of_dnk++)
 		{
-			if (test->answer.fst > test->molecule->length - number_of_dnk) break;
+			if (test->answer.fst > test->length - number_of_dnk) break;
+			if (test->answer.fst == test->length - number_of_dnk) if (test->answer.snd == 1) break;
 			if (number_of_dnk == 0)
 			{
-				temp = compare(test->molecule, test->roleculeLR, 1);
+				temp = compare(test->moleculeL, test->roleculeL);
 				if (temp.fst > test->answer.fst) test->answer = temp;
 				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
 			}
 			else
 			{
-				shift_right(test->roleculeLR);
-				temp = compare(test->molecule, test->roleculeLR, 1);
+				remove_first(test->roleculeL);
+				temp = compare(test->moleculeL, test->roleculeL);
 				if (temp.fst > test->answer.fst) test->answer = temp;
 				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
 
-				shift_left(test->roleculeRL);
-				temp = compare(test->molecule, test->roleculeRL, 0);
+				remove_first(test->moleculeR);
+				temp = compare(test->moleculeR, test->roleculeR);
 				if (temp.fst > test->answer.fst) test->answer = temp;
 				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
 			}
@@ -275,10 +262,11 @@ int main(void)
         for(test_case = 0; test_case < T; test_case++)
 	{
                 test = &tests[test_case];
-		free(test->molecule->data);
-                free(test->molecule);
-                free(test->roleculeLR);
-                free(test->roleculeRL);
+		free(test->data);
+                free(test->moleculeL);
+                free(test->roleculeL);
+		free(test->moleculeR);
+                free(test->roleculeR);
 	}
 	free(all_data);
 	free(tests);
