@@ -1,3 +1,4 @@
+// this program give me only 20/200 score
 // This program give me 70/200 score on Samsung Top Coder Contest.
 //
 // Simple algo with molecule and rolecule.
@@ -49,7 +50,8 @@ typedef struct Molecule_* Molecule;
 typedef struct TestCase_
 {
         Molecule molecule;
-        Molecule rolecule;
+        Molecule roleculeLR;
+	Molecule roleculeRL;
         char *data;
         Pair answer; // Answer.fst is a length and Answer.snd is a first letter index
 	int number;
@@ -79,24 +81,49 @@ void reverse(Molecule molecule)
 }
 
 // must be molecule1->length == molecule2->length
-Pair compare(Molecule molecule1, Molecule molecule2)
+// if RL == 1 then from Right to left compare
+// if RL == 0 then from Left to Right compare
+Pair compare(Molecule molecule1, Molecule molecule2, int RL)
 {
 	long i;
 	Pair current = {0, 0}, total = {0, 0};
 	char ch;
-	for (i=0; i < molecule1->length; i++)
+	if (RL)
 	{
-		char ch = get_dnk(molecule2, i);
-		if ((ch != 'X') && (get_dnk(molecule1, i) == ch))
+                for (i=molecule1->length-1; i>=0; i--)
+                {
+                        char ch = get_dnk(molecule2, i);
+                        if ((ch != 'X') && (get_dnk(molecule1, i) == ch))
+                        {
+                                current.fst++;
+                                if (current.snd==0) current.snd=molecule1->length-i; //indexes begin from 1
+                        }
+                        else
+                        {
+                                if (current.fst > total.fst) total = current;
+                                current.fst = 0;
+                                current.snd = 0;
+        //                      if (ch == 'X') break;
+                        }
+                }
+	}
+	else
+	{
+		for (i=0; i<molecule1->length; i++)
 		{
-			current.fst++;
-			if (current.snd==0) current.snd=i+1; //indexes begin from 1
-		}
-		else
-		{
-			if (current.fst > total.fst) total = current;
-			current.fst = 0;
-			current.snd = 0;
+			char ch = get_dnk(molecule2, i);
+			if ((ch != 'X') && (get_dnk(molecule1, i) == ch))
+			{
+				current.fst++;
+				if (current.snd==0) current.snd=i+1; //indexes begin from 1
+			}
+			else
+			{
+				if (current.fst > total.fst) total = current;
+				current.fst = 0;
+				current.snd = 0;
+	//			if (ch == 'X') break;
+			}
 		}
 	}
 	if (current.fst > total.fst) total = current;
@@ -115,15 +142,17 @@ void printm(Molecule molecule)
 
 void swap_tests(TestCase *test1, TestCase *test2)
 {
-		TestCase temp = {test1->molecule, test1->rolecule, test1->data, test1->answer, test1->number};
+		TestCase temp = {test1->molecule, test1->roleculeLR, test1->roleculeRL, test1->data, test1->answer, test1->number};
 		test1->molecule = test2->molecule;
-		test1->rolecule = test2->rolecule;
+		test1->roleculeLR = test2->roleculeLR;
+		test1->roleculeRL = test2->roleculeRL;
 		test1->data = test2->data;
 		test1->answer = test2->answer;
 		test1->number = test2->number;
 		
 		test2->molecule = temp.molecule;
-		test2->rolecule = temp.rolecule;
+		test2->roleculeLR = temp.roleculeLR;
+		test2->roleculeRL = temp.roleculeRL;
 		test2->data = temp.data;
 		test2->answer = temp.answer;
 		test2->number = temp.number;
@@ -186,28 +215,46 @@ int main(void)
         {
                 test = &tests[test_case];
                 test->molecule = (Molecule) malloc(sizeof(struct Molecule_));
-                test->rolecule = (Molecule) malloc(sizeof(struct Molecule_));
+                test->roleculeLR = (Molecule) malloc(sizeof(struct Molecule_));
+                test->roleculeRL = (Molecule) malloc(sizeof(struct Molecule_));
+			if (temp.fst > test->answer.fst) test->answer = temp;
                 test->answer.fst = 1;
                 test->answer.snd = 1;
 		test->number = test_case + 1;
 		scanf("%ld", &test->molecule->length);
-                test->rolecule->length = test->molecule->length;
+                test->roleculeRL->length = test->roleculeLR->length = test->molecule->length;
 		all_data[test_case] = (char *) malloc(test->molecule->length * sizeof(char));
-		data = test->molecule->data = test->rolecule->data = all_data[test_case];
+		data = test->molecule->data = test->roleculeLR->data = test->roleculeRL->data = all_data[test_case];
 		scanf("%s", data);
-                test->rolecule->first = test->molecule->first = 0;
-                test->rolecule->RL = test->molecule->RL = 1;
-                reverse(test->rolecule);
-		test->rolecule->first -= test->rolecule->length;
+                test->roleculeLR->first = test->roleculeRL->first = test->molecule->first = 0;
+                test->roleculeLR->RL = test->roleculeRL->RL = test->molecule->RL = 1;
+                reverse(test->roleculeLR);
+		reverse(test->roleculeRL);
 	}
 	for(test_case = 0; test_case < T; test_case++)
 	{
 		test = &tests[test_case];
-		if (!timeoff) for (number_of_dnk = 0; number_of_dnk < 2 * test->molecule->length-1 ; number_of_dnk++)
-		{	
-			shift_right(test->rolecule);
-			temp = compare(test->molecule, test->rolecule);
-			if (temp.fst > test->answer.fst) test->answer = temp;
+		if (!timeoff) for (number_of_dnk = 0; number_of_dnk < test->molecule->length - 1; number_of_dnk++)
+		{
+			if (test->answer.fst > test->molecule->length - number_of_dnk) break;
+			if (number_of_dnk == 0)
+			{
+				temp = compare(test->molecule, test->roleculeLR, 1);
+				if (temp.fst > test->answer.fst) test->answer = temp;
+				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
+			}
+			else
+			{
+				shift_right(test->roleculeLR);
+				temp = compare(test->molecule, test->roleculeLR, 1);
+				if (temp.fst > test->answer.fst) test->answer = temp;
+				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
+
+				shift_left(test->roleculeRL);
+				temp = compare(test->molecule, test->roleculeRL, 0);
+				if (temp.fst > test->answer.fst) test->answer = temp;
+				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
+			}
 			gettimeofday(&current_time, &current_zone);
 			if ( timeout <= timedelta(start_time, current_time) ) {timeoff = 1; break;} 
 		}
@@ -230,7 +277,8 @@ int main(void)
                 test = &tests[test_case];
 		free(test->molecule->data);
                 free(test->molecule);
-                free(test->rolecule);
+                free(test->roleculeLR);
+                free(test->roleculeRL);
 	}
 	free(all_data);
 	free(tests);
