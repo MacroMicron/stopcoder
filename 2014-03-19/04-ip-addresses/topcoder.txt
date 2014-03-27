@@ -1,0 +1,86 @@
+	[Practical production issue] IP addresses
+
+
+
+[Background]
+
+We can use various application services via smart devices. When use that application services, our smart devices are connected with other devices or internet. 
+
+Service providers are collecting data such as IP address, IP ports and services name while we are using their services. The service providers can make a new service with the collected data.
+
+
+
+[Problem]
+
+T Company has been developing a new cloud service and the company applied user data collection to the service. The data collection is stored with user’s IP addresses and target IP addresses which were connecting. With this information we can find paired devices.
+
+Assume that there is a record set describing smart devices connection history.
+
+  Device No.	  Smart Device IP	  Connection target device IP
+      1		    10.89.54.1		→         10.89.54.5
+      2		    10.89.54.2		→        10.251.24.88
+      3		    10.89.54.3		→         10.89.54.1
+      4		    10.89.54.4		→         10.89.54.5
+      5		    10.89.54.5		→         10.89.54.1
+
+We can find the connection history of the record set as 1 → 5, 3 → 1, 4 → 5, 5 → 1.
+In this case, paired devices are 1 and 5.
+Considering this case, find paired smart devices when connection record sets are given.
+
+Time Limit: 1 seconds for 20 cases. (java 2 seconds)
+
+ (If your program exceeds this time limit, the answers that have been already printed are ignored and the score becomes 0. 
+
+So, it may be better to print a wrong answer when a specific test case might cause your program to exceed the time limit. One guide for the time limit excess would be the size of the input.)
+
+
+
+[Input]
+There can be more than one test case in the input file. The first line has the number of test cases, the total C test cases are provided in the following lines. (1≤C≤20).
+In each test case,
+In the first line, the number of connection history count N is given (5≤N≤100,000).
+From the next line to N lines, smart devices IP addresses and connection target IP addresses are given. The addresses are separated by a space. 
+
+Smart device IP has only one target connecting history per each line. (It means that each line is composed with only 2 IP addresses.)
+
+
+
+[Output]
+For each test case print two lines, Tth Test case print “Case #T” at the first line. In the second line, print paired numbers in the test case. 
+
+The paired numbers should be printed as ascending order and the numbers are separated by a space. 
+
+If 2 more paired devices are existed, then print any one pair among them. If there are no paired devices, then print “0”.
+
+
+
+[I/O example]
+Input 
+2    ← Two test cases are given.
+5    ← Start line of the first test case.
+1 10.89.54.1 10.89.54.5
+2 10.89.54.2 10.251.24.88
+3 10.89.54.3 10.89.54.1
+4 10.89.54.4 10.89.54.5
+5 10.89.54.5 10.89.54.1
+10   ← Start line of the second test case.
+1 10.89.54.1 10.89.54.5
+2 10.89.54.2 10.251.24.88
+3 10.89.54.3 165.213.144.62
+4 10.89.54.4 165.213.144.62
+5 10.89.54.5 20.89.54.2
+6 20.89.54.1 165.213.144.68
+7 20.89.54.2 20.89.54.3
+8 20.89.54.3 20.89.54.2
+9 20.89.54.4 10.89.54.5
+10 20.89.54.5 165.213.144.65
+
+ 
+
+Output
+
+Case #1 
+1 5
+Case #2 
+7 8
+
