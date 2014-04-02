@@ -1,0 +1,71 @@
+	Emergency Contact Network
+
+
+In a company there are W female employees and M male employees. These employees all live in a community. The community is shaped like a circle and the employees are living in houses that are located on the circumference of the circle. One employee is living in one house. This company is trying to build an emergency contact network, with the following conditions:
+
+
+ 
+
+① The president of the company contacts only one employee and all other communication has to happen between employees.
+② Contacts are built by paper cup telephones as shown below and no two contacts may cross each other at points other than the endings. (A crossing will make the communication impossible because of interferences.)
+③ No male-to-male or female-to-female contact is possible.
+④ The costs of contacts may vary.
+⑤ The overall cost has to be minimized.
+
+
+	< INSERT IMG img-top-coder-1.img >
+
+
+
+Your program is to print out the minimum cost of building an emergency contact network when given the locations of the houses and the cost of all possible contacts between a female and a male employees.
+
+
+	< INSERT IMG img-top-coder-2.img >
+
+
+For example, think of the hearts in the above figure representing the houses where female employees live and the trapezoids representing the houses where male employees live. 
+
+The numbers beside the solid and dotted lines are the costs of building the contacts. Then the solid lines represent the network with the minimum cost. 
+Time Limit: 5 second for 20 cases. ( java 10 seconds)
+
+(If your program exceeds this time limit, the answers that have been already printed are ignored and the score becomes 0. 
+
+So, it may be better to print a wrong answer when a specific test case might cause your program to exceed the time limit. One guide for the time limit excess would be the size of the input.)
+
+
+[Input]
+There can be more than one test case in the input file. The first line has C, the # of test cases. Then the totally C test cases are provided in the following lines (1≤C≤20).
+In each test case, the first line has two integers W (the number of female employees, 1≤W≤20) and M (the number of male employees, 1≤M≤7,000). The female employees are numbered from 1 and the male employees are numbered from W+1. In the next line, W+M integers are given which represent the order in which the houses of the numbered employees appear on the circumference of the circle. 
+
+In the next W lines the costs of contacts between all possible pairs of female and male employees are given. They are given in the following way. 
+
+In the K-th line among the W lines, the cost of the contact between the female employee numbered K and all the male employees are given in the order that starts with the male employee numbered W+1 to the male employee numbered W+M. All costs are positive integers less than or equal to 200.
+
+
+ [Output]
+The output for each test case should contain two lines. For the T-th test case, “Case #T” should be printed out in the first line. 
+
+The second line should contain an integer, representing the minimum cost of building the emergency contact network.
+
+ 
+
+ [I/O Example]
+Input
+2            ← There are 2 test cases
+2 3               ← Starting Case 1, that in the figure
+5 2 3 4 1   ← The order of houses on the circle
+1 1 2        ← The cost between female 1 and males 1, 2, and 3
+4 3 5        ← The cost between female 2 and males 1, 2, and 3
+2 2               ← Starting Case 2
+1 3 4 2
+3 2
+1 2
+
+ 
+
+Output
+Case #1
+8
+Case #2
+6
+
