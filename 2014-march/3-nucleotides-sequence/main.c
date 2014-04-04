@@ -1,6 +1,3 @@
-// this program give me only 20/200 score
-// This program give me 70/200 score on Samsung Top Coder Contest.
-//
 // Simple algo with molecule and rolecule.
 // Molecule string fixed and rolecule string we shift right 2*N-1 times.
 // O(N^2) char comparsions.
