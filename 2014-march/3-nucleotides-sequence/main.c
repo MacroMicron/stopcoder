@@ -49,9 +49,48 @@ typedef struct Pair_
 	long fst; // length in this task
 	long snd; // first index in this task
 } Pair;
+// 2DimNNumber is a number YZ where 0<=Z<N, 0<=Y<N
+typedef Pair NNumber2D;
 
+inline long ToDec(NNumber2D number, long Dimension)
+{
+	return number.fst * Dimension + number.snd;
+}
+
+inline long MinusToDec(NNumber2D number1, NNumber2D number2, long Dimension)
+{
+	return (number1.fst - number2.fst) * Dimension + (number1.snd - number2.snd);
+}
+
+NNumber2D Plus(NNumber2D number, long n, long Dimension)
+{
+	NNumber2D result = {number.fst + n / Dimension, number.snd + n % Dimension};
+	if (result.snd >= Dimension) {result.snd-=Dimension; result.fst++;}
+	return result;
+}
+
+// if we have matrix data unsigned long long int[99]:
+// where every line - is an unsigned long long int on low level
+//    01234567
+//00  XXXXXXXX
+//01  XXXXXXXX
+//02  XXXXXXXX
+//03  XXXXXXXX
+//04  XXXXXXXX
+//05  XXXXXXXX
+//06  XXXXXXXX
+//07  XXXXXXXX
+//08  XXXXXXXX
+//..  ........
+//99  XXXX----
+//
+// begin.fst = 00 - is line number where string begins
+// begin.snd = 0 - is a "bit" number where string begins
+// end.fst = 99 - is a line number where string ends
+// end.snd = 3 - is a "bit" number where string ends
 struct Molecule_
 {
+//	2DimNNumber begin, end; 
 	long length, first;
 	int RL; //RL: if from right to left -1 and left to right = 1
 	data_type *data;
@@ -244,7 +283,8 @@ int main(void)
 		all_data[test_case] = (data_type *) malloc(test->length / dnk_per_data_type + 1);
 //		if (test_case == 0) printf("malloced %d bytes\n", test->length / dnk_per_data_type + 1);
 		data = test->moleculeL->data = test->roleculeL->data = test->roleculeR->data = test->moleculeR->data = all_data[test_case];
-		scanf("%c"); // will read '\n' char
+		char ch;
+		scanf("%c", &ch); // will read '\n' char
 		readm(test->moleculeL); // automatically other mollecules and rolecules will be initalized
  	    reverse(test->roleculeL);
 		reverse(test->roleculeR);
