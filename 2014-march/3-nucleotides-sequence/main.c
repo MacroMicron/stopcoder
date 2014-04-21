@@ -37,6 +37,7 @@ enum dnk_type char_to_dnk_type(char ch)
 		case 'G': return dnk_G;
 		case 'T': return dnk_T;
 	}
+	return dnk_A;
 }
 
 inline double timedelta(struct timeval start_time, struct timeval end_time)
@@ -49,6 +50,7 @@ typedef struct Pair_
 	long fst; // length in this task
 	long snd; // first index in this task
 } Pair;
+
 // 2DimNNumber is a number YZ where 0<=Z<N, 0<=Y<N
 typedef Pair NNumber2D;
 
@@ -90,12 +92,18 @@ NNumber2D Plus(NNumber2D number, long n, long Dimension)
 // end.snd = 3 - is a "bit" number where string ends
 struct Molecule_
 {
-//	2DimNNumber begin, end; 
+	NNumber2D begin, end; 
 	long length, first;
+	// RL - rudiment if begin < end then RL == 1; if begin > end then RL == -1
 	int RL; //RL: if from right to left -1 and left to right = 1
 	data_type *data;
 };
 typedef struct Molecule_* Molecule;
+
+inline long get_length(Molecule molecule)
+{
+	return molecule->RL*MinusToDec(molecule->end, molecule->begin, dnk_per_data_type) + 1;
+}
 
 typedef struct TestCase_
 {
@@ -103,47 +111,68 @@ typedef struct TestCase_
         Molecule roleculeL; // 	     rolecule to left (remove_first roleculeL)
 	Molecule moleculeR; // compare molecule and rolecule and move
 	Molecule roleculeR; //       rolecule to right (remove_first moleculeR)
-        data_type *data;
 	long length;
         Pair answer; // Answer.fst is a length and Answer.snd is a first letter index
 	int number; // TestCase #number
 } TestCase;
 
+inline enum dnk_type get_dnk_from_data(data_type *data, NNumber2D i)
+{
+	return (enum dnk_type) (0b11&(data[i.fst] >> 2*(dnk_per_data_type - 1 - i.snd)));
+}
+
+void set_dnk_in_data(data_type *data, NNumber2D i, enum dnk_type dnk)
+{
+	data[i.fst] |= (data_type)dnk << 2*(dnk_per_data_type - 1 - i.snd);
+}
+
 // 0 <= i <= length-1
-inline enum dnk_type get_dnk(Molecule molecule, long i)
+/*inline enum dnk_type get_dnk(Molecule molecule, long i)
 {
 	return (enum dnk_type) (0b11&((molecule->RL == 1) ? 
 			molecule->data[molecule->first + i/dnk_per_data_type] >> 2*(dnk_per_data_type - 1 - (i%dnk_per_data_type)) :
  			molecule->data[molecule->first - i/dnk_per_data_type] >> 2*(i%dnk_per_data_type)));
+}*/
+
+inline enum dnk_type get_dnk(Molecule molecule, long i)
+{
+	return get_dnk_from_data(molecule->data, Plus(molecule->begin, molecule->RL * i, dnk_per_data_type));
+}
+
+void set_dnk(Molecule molecule, long i, enum dnk_type dnk)
+{
+	set_dnk_in_data(molecule->data, Plus(molecule->begin, molecule->RL * i, dnk_per_data_type), dnk);
 }
 
 void remove_first(Molecule molecule)
 {
-	if (molecule->length > 0)
+	if (get_length(molecule)  > 0)
 	{
-		if (molecule->RL == 1) molecule->first++; else molecule->first--;
-		molecule->length--;
+		molecule->begin = Plus(molecule->begin, molecule->RL, dnk_per_data_type); 
 	}	
 }
 
 void remove_last(Molecule molecule)
 {
-	if (molecule->length > 0)
+	if (get_length(molecule) > 0)
 	{
-		molecule->length--;
+		molecule->end = Plus(molecule->end, (-1)*molecule->RL , dnk_per_data_type);
 	}
 }
 
 void reverse(Molecule molecule)
 {
-	molecule->first+=molecule->RL*(molecule->length-1);
+	NNumber2D temp = molecule->begin;
+	molecule->begin = molecule->end;
+	molecule->end = temp;
 	molecule->RL*=-1;
 }
 
 // must be molecule1->length == molecule2->length
 Pair compare(Molecule molecule1, Molecule molecule2)
 {
-	long i, length = molecule1->length < molecule2->length ? molecule1->length : molecule2->length; // minimal length between molecule1 and molecule2
+	long length1 = get_length(molecule1), length2 = get_length(molecule2);
+	long i, length = length1 < length2 ? length1 : length2; // minimal length between molecule1 and molecule2
 	Pair current = {0, 0}, total = {0, 0};
 	for (i=0; i<length; i++)
 	{
@@ -166,7 +195,7 @@ Pair compare(Molecule molecule1, Molecule molecule2)
 void printm(Molecule molecule)
 {
 	long i;
-	for (i=0; i<molecule->length; i++)
+	for (i=0; i < get_length(molecule); i++)
 	{
 		printf("%c", dnk_type_to_char[get_dnk(molecule, i)]);
 	}
@@ -174,23 +203,33 @@ void printm(Molecule molecule)
 }
 
 // we should to have malloced memory before this operation
-void readm(Molecule molecule)
+// error! po ssulke
+void readm(Molecule molecule, long length)
 {
 	long i;
 	char ch;
-	for (i=0; i < molecule->length/dnk_per_data_type +1; i++)
+	NNumber2D zero = {0, 0};
+	molecule->begin = zero;
+	molecule->end = Plus(zero, length-1, dnk_per_data_type);
+	molecule->RL = 1;
+	for (i=molecule->begin.fst; i <= molecule->end.fst; i++)
 	{
 		molecule->data[i] = (data_type) 0;
 	}
-	molecule->first = 0;
-	molecule->RL = 1;
-	for (i=0; i<molecule->length; i++)
+	for (i=0; i<length; i++)
 	{
 		scanf("%c", &ch);
-		molecule->data[i/dnk_per_data_type] |= ((data_type)char_to_dnk_type(ch)) << 2*(dnk_per_data_type - 1 - (i%dnk_per_data_type));
-//		printf("inside variable %llu\n", molecule->data[i/dnk_per_data_type]);
-//		printf("readed: %c, wrote it as %c\n", ch, dnk_type_to_char[get_dnk(molecule, i)]);
+		set_dnk(molecule, i, char_to_dnk_type(ch));
 	}
+}
+
+// all memory should be allocated before!
+void copym(Molecule molecule1, Molecule molecule2)
+{
+	molecule1->begin = molecule2->begin;
+	molecule1->end   = molecule2->end;
+	molecule1->RL    = molecule2->RL;
+	molecule1->data  = molecule2->data;
 }
 
 void swap_tests(TestCase *test1, TestCase *test2)
@@ -267,32 +306,26 @@ int main(void)
 	tests = (TestCase*) malloc(T*sizeof(TestCase));
 	all_data = (data_type **) malloc(T*sizeof(data_type*));
 	// read all tasks
-    for(test_case = 0; test_case < T; test_case++)
-    {
-        test = &tests[test_case];
-        test->moleculeL = (Molecule) malloc(sizeof(struct Molecule_));
-        test->roleculeL = (Molecule) malloc(sizeof(struct Molecule_));
-        test->moleculeR = (Molecule) malloc(sizeof(struct Molecule_));
-        test->roleculeR = (Molecule) malloc(sizeof(struct Molecule_));
-        test->answer.fst = test->answer.snd = 1;
+	for(test_case = 0; test_case < T; test_case++)
+	{
+	        test = &tests[test_case];
+	        test->moleculeL = (Molecule) malloc(sizeof(struct Molecule_));
+	        test->roleculeL = (Molecule) malloc(sizeof(struct Molecule_));
+	        test->moleculeR = (Molecule) malloc(sizeof(struct Molecule_));
+        	test->roleculeR = (Molecule) malloc(sizeof(struct Molecule_));
+	        test->answer.fst = test->answer.snd = 1;
 		test->number = test_case + 1;
-        test->roleculeL->first = test->roleculeR->first = test->moleculeL->first = test->moleculeR->first = 0;
-   	    test->roleculeL->RL = test->roleculeR->RL = test->moleculeL->RL = test->moleculeR->RL = 1;
 		scanf("%ld", &test->length);
-        test->roleculeR->length = test->roleculeL->length = test->moleculeR->length = test->moleculeL->length = test->length;
 		all_data[test_case] = (data_type *) malloc(test->length / dnk_per_data_type + 1);
-//		if (test_case == 0) printf("malloced %d bytes\n", test->length / dnk_per_data_type + 1);
 		data = test->moleculeL->data = test->roleculeL->data = test->roleculeR->data = test->moleculeR->data = all_data[test_case];
 		char ch;
 		scanf("%c", &ch); // will read '\n' char
-		readm(test->moleculeL); // automatically other mollecules and rolecules will be initalized
- 	    reverse(test->roleculeL);
+		readm(test->moleculeL, test->length); // automatically other mollecules and rolecules will be initalized
+		copym(test->roleculeL, test->moleculeL);
+		copym(test->moleculeR, test->moleculeL);
+		copym(test->roleculeR, test->moleculeL);
+		reverse(test->roleculeL);
 		reverse(test->roleculeR);
-		printm(test->moleculeL);
-		printm(test->roleculeL);
-		printm(test->moleculeR);
-		printm(test->roleculeL);
-		printf("\n");
 	}
 	for(test_case = 0; test_case < T; test_case++)
 	{
@@ -339,7 +372,7 @@ int main(void)
         for(test_case = 0; test_case < T; test_case++)
 	{
                 test = &tests[test_case];
-		free(test->data);
+//		free(test->data);
                 free(test->moleculeL);
                 free(test->roleculeL);
 		free(test->moleculeR);
