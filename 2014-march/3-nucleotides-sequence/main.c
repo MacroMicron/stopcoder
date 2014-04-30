@@ -68,6 +68,7 @@ NNumber2D Plus(NNumber2D number, long n, long Dimension)
 {
 	NNumber2D result = {number.fst + n / Dimension, number.snd + n % Dimension};
 	if (result.snd >= Dimension) {result.snd-=Dimension; result.fst++;}
+	else if (result.snd < 0) {result.snd+=Dimension; result.fst--;}
 	return result;
 }
 
@@ -111,6 +112,7 @@ typedef struct TestCase_
         Molecule roleculeL; // 	     rolecule to left (remove_first roleculeL)
 	Molecule moleculeR; // compare molecule and rolecule and move
 	Molecule roleculeR; //       rolecule to right (remove_first moleculeR)
+	data_type *data;
 	long length;
         Pair answer; // Answer.fst is a length and Answer.snd is a first letter index
 	int number; // TestCase #number
@@ -316,7 +318,7 @@ int main(void)
 	        test->answer.fst = test->answer.snd = 1;
 		test->number = test_case + 1;
 		scanf("%ld", &test->length);
-		all_data[test_case] = (data_type *) malloc(test->length / dnk_per_data_type + 1);
+		all_data[test_case] = (data_type *) malloc(sizeof(data_type) * (test->length / dnk_per_data_type + 1));
 		data = test->moleculeL->data = test->roleculeL->data = test->roleculeR->data = test->moleculeR->data = all_data[test_case];
 		char ch;
 		scanf("%c", &ch); // will read '\n' char
@@ -353,7 +355,7 @@ int main(void)
 				if (temp.fst == test->answer.fst) if (temp.snd < test->answer.snd) test->answer = temp;
 			}
 			gettimeofday(&current_time, &current_zone);
-			if ( timeout <= timedelta(start_time, current_time) ) {timeoff = 1; break;} 
+			//if ( timeout <= timedelta(start_time, current_time) ) {timeoff = 1; break;} 
 		}
 	}
 
